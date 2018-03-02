@@ -1,3 +1,5 @@
+
+
 ## 第一章 数据类型
 
 ### 1.1 JavaScript六中数据类型
@@ -607,6 +609,173 @@ function func(){
 }(1);
 //SyntaxError
 ```
+
+5.delete不可配置的属性报错
+
+```
+!function(a){
+  var obj={};
+  Object.defineProperty(obj,'a',{configurable:false});
+  console.log(delete obj.a);
+}(1);
+//false  删除失败
+```
+
+6.对象字面量重复属性名报错
+
+```
+!function(){
+  var obj={x:1,x:2};
+  console.log(obj.x);
+}();
+//取最后一个，值为2
+
+!function(){
+  'use strict';
+  var obj={x:1,x:2};
+}();
+//SyntaxError
+```
+
+7.禁止八进制字面量
+
+8.eval,arguments变为关键字，不能作为变量、函数名
+
+```
+!function(){
+  function eval(){}
+  console.log(eval);
+}();
+//输出function eval(){}
+
+!function(){
+  'use strict';
+  function eval(){}
+}();
+//SyntaxError
+```
+
+9.eval独立作用域
+
+```
+!function(){
+  eval('var evalVal=2;');
+  console.log(typeof evalVal);
+}();
+//number
+
+!function(){
+  'use strict';
+  eval('var evalVal=2;');
+  console.log(typeof evalVal);
+}();
+//undefined
+```
+
+10.一般函数调用时（不是对象的方法调用，也不使用apply/call/bind等修改this）this指向null，而不是全局对象。若使用apply/call，当传入null或undefined时，this将指向null或undefined，而不是全局对象。
+
+11.试图修改不可写属性（writeable=false），在不可扩展的对象上添加属性时报TypeError，而不是忽略。
+
+12.arguments.caller,arguments.callee被禁用
+
+## 第四章 对象
+
+### 4.1 对象概述
+
+对象中包含一系列属性，这些属性是无序的。每个属性都有一个字符串key和对应的value。
+
+```
+var obj={x:1,y:2};
+obj.x;	//1
+obj.y;	//2
+```
+
+<img src='https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180301103551.png' style="zoom:70%">
+
+### 4.2 创建对象、原型链
+
+创建对象：
+
+####字面量
+
+```
+var obj1={x:1,y:2};
+var obj2={
+  x:1,
+  y:2,
+  o:{
+    z:3,
+    n:4
+  }
+};
+```
+
+####new/原型链
+
+```
+function foo(){}
+foo.prototype.z=3;
+```
+
+定义一个函数对象，这个对象默认带prototype属性
+
+![img](https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180301145638.png)
+
+如图，每个对象都有[proto]标签
+
+```
+var obj=new foo();
+obj.y=2;
+obj.x=1;
+```
+
+![img](https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180301154914.png)
+
+```
+obj.x;//1
+obj.y;//2
+obj.z;//3
+typeof obj.toString;// 'function'
+'z' in obj;//true
+obj.hasOwnProperty('z');//false
+```
+
+**注意：**JS中默认的对象都会有toString方法，因为他们原型链上的末端在null之前都会有个Object.prototype，toString是Object.prototype上的。
+
+当给对象赋值时，不会向原型链查找
+
+```
+obj.z=5;
+obj.hasOwnProperty('z');//true
+foo.prototype.z;//still 3
+obj.z;//5
+obj.z=undefined;
+obj.z;//undefined
+delete obj.z;//true
+obj.z;//3
+```
+
+![img](https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180301160640.png)
+
+#### Object.create
+
+```
+var obj=Object.create({x:1});
+obj.x //1
+typeof obj.toString	//"function"
+obj.hasOwnProperty('x'); //false
+
+var obj=Object.create(null);
+obj.toString //undefined
+```
+
+![img](https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180301161851.png)
+
+
+
+
+
+
 
 
 
