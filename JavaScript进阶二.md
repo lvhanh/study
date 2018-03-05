@@ -771,6 +771,152 @@ obj.toString //undefined
 
 ![img](https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180301161851.png)
 
+### 4.3 属性操作
+
+读写对象属性：属性异常、删除属性、检测属性、枚举属性。
+
+#### 属性读写
+
+```
+var obj={x:1,y:2};
+obj.x; //1
+obj["y"]; //2
+```
+
+中括号的情况：
+
+```
+var obj={x1:1,x2:2};
+var i=1,n=2;
+for(;i<=n;i++){
+  console.log(obj['x'+1]);
+}//输出1,2
+
+var p;
+for(p in obj){
+  console.log(obj[p]);
+}
+```
+
+#### 属性读写-异常
+
+```
+var obj={x:1};
+obj.y; //undefined
+//直接查到原型链顶端null
+var yz=obj.y.z; 
+//TypeError:cannot read property 'z' of undefined
+
+var yz;
+if(obj.y){
+  yz=obj.y.z;
+}
+
+var yz=obj&&obj.y&&obj.y.z;
+```
+
+#### 属性删除
+
+```
+var person={age:28,title:'fe'};
+delete person.age; //true
+delete person['title']; //true
+person.age; //undefined
+delete person.age; //true
+
+delete Object.prototype; //false
+//不允许被删除
+
+var descriptor=Object.getOwnPropertyDescriptor(Object,'prototype');
+descriptor.configurable; //false
+//configurable 是否可配置
+```
+
+**注意：**用var定义的全局变量和局部变量不能被删除
+
+```
+var globalVal=1;
+delete globalVal; //false
+
+(function(){
+  var localVal=1;
+  return delete localVal;
+}()); //false
+
+ohNo=1;
+window.ohNo; //1
+delete ohNo; //true
+```
+
+#### 属性检测
+
+```
+var cat=new Object;
+cat.legs=4;
+cat.name="ketty";
+
+'legs' in cat; //true
+'abc' in cat; //false
+'toString' in cat; //true,inherited property!!!
+
+cat.hasOwnProperty('legs'); //true
+cat.hasOwnProperty('toString'); //false
+
+cat.propertyIsEnumerable('true'); //true
+cat.propertyIsEnumerable('toString'); //false
+```
+
+enumerable：枚举
+
+```
+Object.defineProperty(cat,'price',{enumerable:false,value:1000});
+//defineProperty默认所有标签false
+cat.propertyIsEnumerable('price'); //false
+cat.hasOwnProperty('price'); //true
+
+if(cat&&cat.legs){
+  cat.legs*=2;
+}
+
+if(cat.legs!=undefined){
+  //!==undefined or !==null
+}
+
+if(cat.legs!==undefined){
+  //only if cat.legs is not undefined
+}
+```
+
+#### 属性枚举
+
+```
+var o={x:1,y:2,z:3};
+'toString' in o; //true
+o.propertyIsEnumerable('toString'); //false
+var key;
+for(key in o){
+  console.log(key); //x,y,z
+}
+
+var obj=Object.create(o);
+obj.a=4;
+var key;
+for(key in obj){
+  console.log(key); //a,x,y,z
+}
+
+var obj=Object.create(o);
+obj.a=4;
+var key;
+for(key in obj){
+  if(obj.hasOwnProperty(key)){
+    console.log(key); //a
+  }
+}
+```
+
+
+
 
 
 
