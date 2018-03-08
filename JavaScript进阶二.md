@@ -915,11 +915,323 @@ for(key in obj){
 }
 ```
 
+### 4.4 get/set方法
+
+####属性getter/setter方法
+
+```
+var man={
+  name:'A',
+  weibo:'@A',
+  get age(){
+    return new Date().getFullYear()-1988;
+  },
+  set age(val){
+    console.log('Age can\'t be set to'+val);
+  }
+}
+console.log(man.age); //27
+man.age=100; //Age can't be set to 100
+console.log(man.age); //still 27
+```
+
+```
+var man={
+  weibo:'@A',
+  $age:null,
+  get age(){
+    if(this.$age==undefined){
+      return new Date().getFullYear()-1988;
+    }else{
+      return this.$age;
+    }
+  },
+  set age(val){
+    val=+val; //+val表示转换为数字
+    if(!isNaN(val)&&val>0&&val<150){
+      this.$age=+val;
+    }else{
+      throw new Error('Incorrect val='+val);
+    }
+  }
+}
+console.log(man.age); //27
+man.age=100;
+console.log(man.age); //100
+man.age='abc'; //error:Incorrect val=NaN
+```
+
+#### get/set与原型链
+
+```
+function foo(){}
+Object.defineProperty(foo.property,'z',{get:function(){return 1;}});
+var obj=new foo();
+
+obj.z; //1
+obj.z=10;
+obj.z; //still 1
+```
+
+![img](https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180307104420.png)
+
+当原型链上有get/set方法时，赋值时会走原型链上的get/set方法。
+
+若要实现修改，可以用defineProperty()
+
+```
+Objext.defineProperty(obj,'z',{value:100,configurable:true});
+obj.z; //100
+delete obj.z;
+obj.z; //back to 1
+```
+
+**注意：**defineProperty()中属性标签都为false
+
+```
+var o={};
+Object.defineProperty(o,'x',{value:1}); //writable=false,configurable=false
+var obj=Object.create(o);
+obj.x; //1
+obj.x=200;
+obj.x; //still 1,can't change it
+
+Object.defineProperty(obj,'x',{writable:true,configurable:true,value:100});
+obj.x; //100
+obj.x=500;
+obj.x; //500
+```
+
+### 4.5 属性标签
+
+#### 属性级的权限标签
+
+1.``Object.getOwnPropertyDescriptor(包含属性的对象,属性的名称)``，返回属性的描述符
+
+2.``Object.defineProperty(要在其上定义属性的对象,要定义或修改的属性的名称,将被定义或修改的属性描述符)``返回被传递给函数的对象，被定义的属性描述符默认false。
+
+   ``Object.defineProperties(要在其上定义属性的对象，该对象的一个或多个键值对定义了将要为对象添加或修改的属性的具体配置)``返回该对象。
+
+3.``Object.keys(要返回其枚举自身属性的对象)``返回一个表示给定对象的所有可枚举属性的字符串数组。返回的数组中属性名的排列顺序和使用for...in时返回的顺序一致。
+
+```
+Object.getOwnPropertyDescriptor({pro:true},'pro');
+//Object{value:true,writable:true,enumerable:true,configurable:true}
+Object.getOwnPropertyDescriptor({pro:true},'a');
+//undefined
+
+var person={};
+Object.defineProperty(person,'name',{
+  configurable:false,
+  writable:false,
+  enumerable:true,
+  value:'a'
+});
+person.name; //a
+person.name=1;
+person.name; //still a
+delete person.name; //false
+
+Object.defineProperty(person,'type',{
+  configurable:true,
+  writable:true,
+  enumerable:false,
+  value:"Object"
+});
+Object.keys(person); //["name"]
+
+Object.defineProperties(person,{
+  title:{value:'fe',enumerable:true},
+  corp:{value:'baba',enumerable:true},
+  salary:{value:50000,enumerable:true,writable:true}
+});
+```
+
+<img src="https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180308134035.png" style="zoom:70%">
+
+### 4.6 对象标签、对象序列化
+
+#### 对象标签
+
+对象标签包括：``[[proto]]``，``[[class]]``，``[[extensible]]``
+
+1.\_proto\_ 原型标签
+
+<img src="https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180308140559.png" style="zoom:80%">
 
 
 
+2.class标签
 
+表示对象的类型，没有直接查看的方式，可以通过``Object.prototype.toString``间接获取。
 
+```
+var toString=Object.prototype.toString;
+function getType(o){return toString.call(o).slice(8,-1);};
+
+toString.call(null); //"[object Null]"
+getType(null); //"Null"
+getType(undefined); //"Undefined"
+getType(1); //"Number"
+getType(new Number(1)); //"Number"
+typeof new Number(1); //"object"
+getType(true); //"Boolean"
+getType(new Boolean(true)); //"Boolean"
+```
+
+3.extensible标签
+
+表示对象是否可扩展，即对象的属性是否可添加
+
+```
+var obj={x:1,y:2};
+Object.isExtensible(obj); //true
+Object.preventExtensions(obj); //阻止添加新属性
+Object.isExtensible(obj); //false
+obj.z=1;
+obj.z; //undefined,add new property failed
+Object.getOwnPropertyDescriptor(obj,'x');
+//Object{value:1,writable:true,enumerable:true,configurable:true}
+
+Object.seal(obj); //在preventExtensions()基础上再将configurable设为false
+Object.getOwnPropertyDescriptor(obj,'x');
+//Object{value:1,writable:true,enumerable:true,configurable:false}
+Object.isSealed(obj); //true
+
+Object.freeze(obj);
+Object.getOwnPropertyDescriptor(obj,'x');
+//Object{value:1,writable:false,enumerable:true,configurable:false}
+Object.isFrozen(obj); //true
+```
+
+#### 序列化
+
+对象序列化是指将对象的状态转换为字符串，也可将字符串还原为对象。ES5提供了内置函数``JSON.stringify()``和``JSON.parse()``用来序列化和还原JavaScript对象。这些方法都使用JSON作为数据交换格式。
+
+```
+var obj={x:1,y:true,z:[1,2,3],nullVal:null};
+JSON.stringify(obj); //"{"x":1,"y":true,"z":[1,2,3],"nullVal":null}"
+
+obj={val:undefined,a:NaN,b:Infinity,c:new Date()};
+JSON.stringify(obj); //"{"a":null,"b":null,"c":"2015-01-20****"}"
+
+obj=JSON.parse('{"x":1}');
+obj.x; //1
+```
+
+自定义序列化：
+
+```
+var obj={
+  x:1,
+  y:2,
+  o:{
+    o1:1,
+    o2:2,
+    toJSON:function(){
+      return this.o1+this.o2;
+    }
+  }
+};
+JSON.stringify(obj); //"{"x":1,"y":2,"o":3}"
+```
+
+#### 其它对象方法
+
+1.toString()方法：返回一个表示调用这个方法的对象的字符串，在需要将对象转化为字符串的时候调用这个方法。
+
+2.valueOf()方法：将对象转化为某种原始值而非字符串的时候调用，尤其是转化为数字时候。
+
+上述两种方法JS都会自动调用
+
+```
+var obj={x:1,y:2};
+obj.toString(); //"[object Object]"
+obj.toString=function(){return this.x+this.y};
+"Result"+obj; //"Result3",by toString
+
++obj; //3,from toString
+
+obj.valueOf=function(){return this.x+this.y+100;};
++obj; //103,from valueOf
+
+"Result"+obj; //still "Result 103"
+```
+
+**注意：**
+
+toString和valueOf都存在的时候，在做操作的时候都会把对象转换为基本类型，先找valueOf如果valueOf返回基本类型就以valueOf的值作为结果，反之如果valueOf不存在或者返回对象就会找toString
+
+## 第五章 数组
+
+### 5.1 创建数组、数组操作
+
+数组概述：数组是值的有序集合。每个值叫做元素，每个元素在数组中都有数字位置编号，也就是索引。JS中的数组是弱类型的，数组中可以含有不同类型的元素。数组元素甚至可以是对象或其它数组。
+
+```
+var arr=[1,true,null,undefined,{x:1},[1,2,3]];
+```
+
+#### 创建数组
+
+1.直接创建
+
+```
+var arr=['Nunnly','is','big','keng']
+
+var commasArr1=[1,,2]; //1,undefined,2
+var commasArr2=[,,]; //undefined*2
+```
+
+2.new Array
+
+```
+var arr=new Array();
+var arrWithLength=new Array(100);
+var arrLikesLiteral=new Array(true,false,null,1,2,"hi");
+```
+
+#### 数组操作
+
+1.数组元素读写
+
+```
+var arr=[1,2,3,4,5];
+arr[1]; //2
+arr.length; //5
+```
+
+ 2.数组元素增删
+
+JavaScript中的数组是动态的，不需要指定大小。length属性会根据情况更新
+
+```
+var arr=[];
+arr[0]=1;
+arr[1]=2;
+arr.push(3);
+arr; //[1,2,3]
+
+arr[arr.length]=4; //equal to arr.push(4)
+arr; //[1,2,3,4]
+
+arr.unshift(0);
+arr; //[0,1,2,3,4]
+
+delete arr[2];
+arr; //[0,1,undefined,3,4]
+arr.length; //5
+2 in arr; //false
+
+arr.length-=1;
+arr; //[0,1,undefined,3],4 is removed
+
+arr.pop(); //3 returned by pop
+arr; //[0,1,undefined],3 is removed
+
+arr.shift(); //0 returned by shift
+arr; //[1,undefined]
+```
 
 
 
