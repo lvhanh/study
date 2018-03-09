@@ -1233,7 +1233,243 @@ arr.shift(); //0 returned by shift
 arr; //[1,undefined]
 ```
 
+3.数组迭代
 
+```
+var i=0,n=10;
+var arr=[1,2,3,4,5];
+for(;i<n;i++){
+  console.log(arr[i]); //1,2,3,4,5
+}
+for(i in arr){
+  console.log(arr[i]); //1,2,3,4,5
+}
+
+Array.prototype.x='inherited';
+for(i in arr){
+  console.log(arr[i]); //1,2,3,4,5,inherited
+}
+for(i in arr){
+  if(arr.hasOwnProperty(i)){
+    console.log(arr[i]); //1,2,3,4,5
+  }
+}
+```
+
+### 5.2 二维数组、稀疏数组
+
+#### 二维数组
+
+```
+var arr=[[0,1],[2,3],[4,5]];
+var i=0,j=0;
+var row;
+for(;i<arr.length;i++){
+  row=arr[i];
+  console.log('row'+i);
+  for(j=0;j<row.length;j++){
+    console.log(row[j]);
+  }
+}
+```
+
+#### 稀疏数组
+
+稀疏数组并不含有从0开始的连续索引，一般length属性值比实际元素个数大。
+
+```
+var arr1=[undefined];
+var arr2=new Array(1);
+0 in arr1; //true
+0 in arr2; //false
+arr1.length=100;
+arr1[99]=123;
+99 in arr1; //true
+98 in arr1; //false
+
+var arr=[,,];
+0 in arr; //false
+```
+
+### 5.3 数组方法
+
+{}=>Object.prototype
+
+[]=>Array.prototype
+
+#### Array.prototype.join
+
+将数组转换为字符串
+
+```
+var arr=[1,2,3];
+arr.join(); //"1,2,3"
+arr.join("_"); //"1_2_3"
+```
+
+用join可以创建一个函数，重复某个字符串n次
+
+```
+function repeatString(str,n){
+  return new Array(n+1).join(str);
+}
+repeatString("a",3); //"aaa"
+```
+
+#### Array.prototype.reverse
+
+将数组逆序，**原数组会被修改**
+
+```
+var arr=[1,2,3];
+arr.reverse(); //[3,2,1]
+arr; //[3,2,1]
+```
+
+#### Array.prototype.sort
+
+数组排序，默认按照字母顺序排序，**原数组会被修改**。
+
+```
+var arr=["a","d","c","b"];
+arr.sort(); //["a","b","c","d"]
+
+arr=[13,24,51,3];
+arr.sort(); //[13,24,3,51]
+arr; //[13,24,3,51]
+
+arr.sort(
+	function(a,b){
+      return a-b;
+	}
+); //[3,13,24,51]
+```
+
+#### Array.prototype.concat
+
+数组合并，**原数组不会被修改**。可以把数组元素作为参数，其中数组元素会被拉平。
+
+注意：若参数数组中还有数组，只会拉平一次。
+
+```
+var arr=[1,2,3];
+arr.concat(4,5); //[1,2,3,4,5]
+arr; //1,2,3
+
+arr.concat([10,11],13); //[1,2,3,10,11,13]
+
+arr.concat([1,[2,3]]); //[1,2,3,1,[2,3]]
+```
+
+#### Array.prototype.slice
+
+返回数组的片段，**不会修改原数组**
+
+```
+var arr=[1,2,3,4,5];
+arr.slice(1,3); //[2,3]
+arr.slice(1); //[2,3,4,5]
+arr.slice(1,-1); //[2,3,4]
+arr.slice(-4,-3); //[2]
+```
+
+#### Array.prototype.splice
+
+数组拼接，**原数组会被修改**
+
+```
+var arr=[1,2,3,4,5];;
+arr.splice(2); //returns [3,4,5]
+arr; //[1,2];
+
+arr=[1,2,3,4,5];
+arr.splice(2,2); //returns [3,4]
+arr; //[1,2,5]
+
+arr=[1,2,3,4,5];
+arr.splice(1,1,'a','b'); //returns [2]
+arr; //[1,"a","b",3,4,5]
+```
+
+#### Array.prototype.forEach(ES5)
+
+数组遍历
+
+```
+var arr=[1,2,3,4,5];
+arr.forEach(function(x,index,a){
+  console.log(x+'|'+index+'|'+(a===arr));
+}
+);
+//1|0|true
+//2|1|true
+//3|2|true
+//4|3|true
+//5|4|true
+```
+
+#### Array.prototype.map(ES5)
+
+数组映射，**原数组不会被修改**
+
+```
+var arr=[1,2,3];
+arr.map(function(x){
+  return x+10;
+}); //[11,12,13]
+arr; //[1,2,3]
+```
+
+#### Array.prototype.filter(ES5)
+
+数组过滤，**原数组不会被修改**
+
+```
+var arr=[1,2,3,4,5,6,7,8,9,10];
+arr.filter(function(x,index){
+  return index%3===0||x>=8;
+}); //returns[1,4,7,8,9,10]
+arr; //[1,2,3,4,5,6,7,8,9,10]
+```
+
+#### Array.prototype.every&some(ES5)
+
+数组判断
+
+```
+var arr=[1,2,3,4,5];
+arr.every(function(x){
+  return x<10;
+}); //true
+arr.every(function(x){
+  return x<3;
+}); //false
+
+var arr=[1,2,3,4,5];
+arr.some(function(x){
+  return x===3;
+}); //true
+arr.some(function(x){
+  return x===100;
+}); //false
+```
+
+#### Array.prototype.reduce&reduceRight
+
+reduce:数组中元素两两之间操作，最后得到唯一的值。
+
+```
+var arr=[1,2,3];
+var sum=arr.reduce(function(x,y){
+  return x+y
+},0); //6
+arr; //[1,2,3]
+
+arr=[3,9,6];
+
+```
+
+<img src="https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180309164331.png" style="zoom:80%">
 
 
 
