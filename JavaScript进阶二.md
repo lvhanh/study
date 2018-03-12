@@ -1466,10 +1466,189 @@ var sum=arr.reduce(function(x,y){
 arr; //[1,2,3]
 
 arr=[3,9,6];
-
+var max=arr.reduce(function(x,y){
+  console.log(x+"|"+y);
+  return x>y?x:y;
+});
+// 3|9
+// 9|6
+max; //9
 ```
 
 <img src="https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180309164331.png" style="zoom:80%">
+
+reduceRight:从右到左开始遍历
+
+```
+max=arr.reduceRight(function(x,y){
+  console.log(x+"|"+y);
+  return x>y?x:y;
+});
+//6|9
+//9|3
+max; //9
+```
+
+#### Array.prototype.indexOf&lastIndexOf(ES5)
+
+数组检索
+
+indexOf(查找的元素,起始位置)
+
+```
+var arr=[1,2,3,2,1];
+arr.indexOf(2); //1
+arr.indexOf(99); //-1
+arr.indexOf(1,1); //4
+arr.indexOf(1,-3); //4
+arr.lastIndexOf(2); //3
+arr.lastIndexOf(2,-2); //3
+arr.lastIndexOf(2,-3); //1
+```
+
+#### Array.isArray
+
+判断是否为数组
+
+```
+Array.isArray([]); //true
+
+[] instancrof Array; //true
+({}).toString.apply([])==='[object Array]'; //true
+```
+
+#### 数组与对象、字符串的比较
+
+数组--一般对象
+
+相同点：1.都可以继承2.数组是对象，对象不一定是数组3.都可以当做对象添加删除属性
+
+不同点：1.数组自动更新length2.按索引访问数组常常比访问一般对象属性明显迅速3.数组对象继承Array.prototype上的大量数组操作方法
+
+数组--字符串
+
+字符串是类数组的元素
+
+通过``Array.prototype.XX.call()``的方法使用数组方法
+
+```
+var str="hello world";
+str.charAt(0); //"h"
+str[1]; //e
+
+Array.prototype.join.call(str,"_");
+//"h_e_l_l_o__w_o_r_l_d"
+```
+
+## 第六章 函数和作用域（上）
+
+函数是一块JavaScript代码，被定义一次，但可执行和调用多次。JS中的函数也是对象，所以JS函数可以像其它对象那样操作和传递，所以我们也常叫JS中的函数为函数对象。
+
+### 6.1 函数定义
+
+函数使用function来定义，其后跟随一些组成部分：函数名称标识符、一对圆括号、一对花括号
+
+```
+//输出o的每个属性的名称和值，返回undefined
+function printprops(o){
+  for(var p in o)
+  console.log(p+":"+o[p]+"\n");
+}
+//计算两个笛卡尔坐标(x1,y1)和(x2,y2)之间的距离
+function distance(x1,y1,x2,y2){
+  var dx=x2-x1;
+  var dy=y2-y1;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+```
+
+可以把函数赋值给变量
+
+```
+var square=function(x){return x*x;}
+```
+
+函数表达式可以包含名称，这在递归时很有用
+
+```
+var f=function fact(x){
+  if (x<=1) return 1;
+  else return x*fact(x-1);
+}
+```
+
+函数表达式也可以作为参数传给其它函数
+
+```
+data.sort(function(a,b){
+  return a-b;
+});
+```
+
+函数表达式有时定义后立即调用
+
+```
+var tensquared=(function(x){
+  return x*x;
+}(10));
+```
+
+函数声明语句“被提前”到外部脚本或外部函数作用域的顶部时可以被在它定义之前出现的代码调用。以表达式形式定义的函数在定义之前无法调用。
+
+在JS里，函数可以嵌套在其他函数里。
+
+```
+function hypotenuse(a,b){
+  function square(x){return x*x;}
+  return Math.sqrt(square(a)+square(b));
+}
+```
+
+嵌套函数可以访问嵌套他们的函数的参数和变量。如上面代码中square()可以读写外部函数hypotenuse()定义的a,b.
+
+### 6.2 函数调用
+
+有4种方法调用JavaScript函数：
+
+1.作为函数2.作为方法3.作为构造函数4.通过它们的call()和apply()方法间接调用
+
+使用调用表达式可以进行普通的函数调用也可进行方法调用。如果函数表达式是一个属性访问表达式，即该函数是一个对象的属性或数组中的一个元素，那么它就是一个方法调用表达式。
+
+```
+printprops({x:1});
+var total=distance(0,0,2,1)+distance(2,1,3,5);
+```
+
+以函数形式调用的函数通常不使用this关键字。不过，"this"可以用来判断当前是否是严格模式。
+
+```
+var strict=(function(){return !this;}());
+```
+
+#### 方法调用
+
+```
+o.m=f;
+o.m();
+o.m(x,y);
+```
+
+对方法调用的参数和返回值的处理，和普通函数调用完全一致。但是，方法调用和函数调用有一个重要区别，即：调用上下文。属性访问表达式由两部分组成：一个对象(o)和属性名称(m)。像这样的方法调用表达式里，对象o成为调用上下文，函数体可以使用关键字this引用该对象。
+
+```
+var calculator={ //对象直接量
+  operand1:1,
+  operand2:1,
+  add:function(){
+  //this指代当前对象
+    this.result=this.operand1+this.operand2;
+  }
+};
+calculator.add(); //2
+calculator.result; //2
+```
+
+<img src="https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180312165931.png" style="zoom:80%">
 
 
 
