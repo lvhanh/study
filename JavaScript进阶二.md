@@ -1650,5 +1650,347 @@ calculator.result; //2
 
 <img src="https://github.com/lvhanh/study/raw/master/picture/QQ%E6%88%AA%E5%9B%BE20180312165931.png" style="zoom:80%">
 
+**注意：**this是一个关键字，不是变量也不是属性名，不允许给this赋值。
+
+关键字this没有作用域的限制，嵌套的函数不会从调用它的函数中继承this。如果嵌套函数作为方法调用，其this的值指向调用它的对象。如果嵌套函数作为函数调用，其this的值不是全局对象（非严格模式下）就是undefined（严格模式下）。
+
+```
+var o={
+  m:function(){
+    var self=this; //将this的值保存至一个变量中
+    console.log(this===o); //true，this就是这个对象o
+    f();
+    function f(){
+      console.log(this===o); //false,this的值是全局对象或undefined
+      console.log(self===o); //true,self指外部函数的this值
+    }
+  }
+};
+```
+
+#### 构造函数调用
+
+构造函数调用和普通函数调用以及方法调用在实参处理、调用上下文和返回值方面都有不同。
+
+如果构造函数没有形参，JavaScript构造函数调用的语法是允许省略实参列表和圆括号的。
+
+```
+var o=new Object();
+var o=new Object;
+```
+
+#### 间接调用
+
+函数也是对象，函数对象也可以包含方法，其中两个方法call()和apply()可以用来间接地调用函数。
+
+### 6.3 函数的实参和形参
+
+#### 可选形参
+
+当调用函数的时候传入的实参比函数申明时指定的少，剩下的形参都将设置为undefined。因此应该给省略的参数赋一个默认值。
+
+```
+//将对象o中可枚举的属性名追加至数组a中，并返回这个数组a
+//如果省略a，则创建一个新数组并返回这个新数组
+function getPropertyNames(o,/*optional*/ a){
+  if(a===undefined) a=[]; //如果未定义，则使用新数组
+  for(var property in o)a.push(property);
+  return a;
+}
+//这个函数调用可以传入1或2个实参
+var a=getPropertyNames(o); //将o的属性存储到一个新数组中
+getPropertyNames(p,a); //将p的属性追加至数组a中
+```
+
+**注意：**当用可选实参来实现函数时，需要将可选实参放在实参列表的最后，使用注释/*optional\*/来强调形参时可选的。
+
+#### 可变长的实参对象
+
+当调用函数的时候传入的实参个数超过形参时，没有办法直接获得未命名值得引用。在函数体内，标识符arguments时指向实参对象的引用，实参对象时一个类数组对象，这样可以通过下标访问传入函数的实参值。
+
+```
+function f(x,y,z){
+//首先验证传入实参的个数
+  if(arguments.length!=3){
+    throw new Error("function f called with"+arguments.length+"arguments,but it expects 3 arguments.");
+  }
+  //执行其他逻辑
+}
+```
+
+实参对象有重要的用处就是让函数可以操作任意数量的实参
+
+```
+function max(/*...*/){
+  var max=Number.NEGATIVE_INFINITY;
+  //遍历实参，查找并记住最大值
+  for(var i=0;i<arguments.length;i++)
+  	if(arguments[i]>max) max=arguments[i];
+  return max;
+}
+var largest=max(1,10,100,2,3,1000)
+```
+
+```
+function f(x){
+  console.log(x); //输出实参的初始值
+  arguments[0]=null; //修改实参数组的元素会改变x的值
+  console.log(x);	//输出null
+}
+```
+
+通过实参名字修改实参值的话，通过arguments[]数组也可以获取到更改后的值。
+
+**注意：**在ES5中移除了实参对象的这个特殊特性。在非严格模式中，函数里的arguments仅仅是标识符，在严格模式中它变成了保留字。严格模式中的函数无法使用arguments作为形参名或局部变量名，也不能赋值。
+
+callee和caller属性：
+
+除了数组元素，实参对象还定义了callee和caller属性。
+
+callee属性指代当前正在执行的函数，caller是非标准的，指代调用当前正在执行的函数的函数，通过caller属性可以访问调用栈。
+
+```
+var factorial=function(x){
+  if(x<=1) return 1;
+  return x*arguments.callee(x-1);
+}
+```
+
+#### 将对象属性用作实参
+
+通过名/值对的形式来传入参数，这样参数的顺序就无关紧要了。定义函数的时候，传入的参数都写入一个单独的对象之中，在调用的时候传入一个对象，对象中的名/值对是真正需要的实参数据。
+
+```
+//将原始数组的length元素复制至目标数组
+//开始复制原数组的from_start元素
+//并且将其复制至目标数组的to_start中
+function arraycopy(/*array*/ from,/*index*/ from_start,/*array*/ to,/*index*/ to_start,/*integer*/ length){
+  //代码
+}
+//效率低，但不必记住实参的顺序
+//并且from_sart和to_start都默认为0
+function easycopy(args){
+  arrcopy(args.from,
+  args.from_start||0,
+  args.to,
+  args.to_start||0,
+  args.length
+  );
+  var a=[1,2,3,4],b=[];
+  easycopy({from:a,to:b,length:4});
+}
+```
+
+#### 实参类型检测
+
+JavaScript方法的形参并未申明类型，在形参传入函数体之前也未做任何类型检查。
+
+```
+//返回数组（或类数组对象）a的元素的累加和
+//数组a中必须为数字，null和undefined的元素都将忽略
+function sum(a){
+  if(isArrayLike(a)){
+    var total=0;
+    for(var i=0;i<arguments.length;i++){
+      var element=a[i];
+      if(element==null) continue; //跳过null和undefined
+      if（isFinite(element)) total+=element;
+      else throw new Eror("sum():element must be finite numbers");
+    }
+    return total;
+  }
+  else throw new Error("sum():argument must be array-like");
+}
+```
+
+### 6.4 作为值的函数
+
+函数不仅是语法也是值。可以将函数赋值给变量，存储在对象的属性或数组的元素中，作为参数传入另外一个函数等。
+
+```
+function square(x){return x*x;}
+//创建一个新的函数对象，并将其赋值给变量square
+var s=square;
+square(4); // 16
+s(4);  // 16
+```
+
+除了赋值给变量，还可以将函数赋值给对象的属性。
+
+```
+var o={square:function(x){return x*x;}};
+var y=o.square(16); //256
+```
+
+函数甚至不需要带名字，当把他们赋值给数组元素时
+
+```
+var a=[function(x){return x*x;},20];
+a[0](a[1]); //400
+```
+
+```
+//定义一些简单函数
+function add(x,y){return x+y;}
+function subtract(x,y){return x-y;}
+function multiply(x,y){return x*y;}
+function divide(x,y){return x/y;}
+
+//这里函数以上面某个函数作为参数，并给它传入两个操作数然后调用它
+function operate(operator,operand1,operand2){
+  return operator(operand1,operand2);
+}
+var i=operate(add,operate(add,2,3),operate(multiply,4,5));
+//使用函数直接量，重复实现
+var operators={
+  add:function(x,y){return x+y;},
+  subtract:function(x,y){return x-y;},
+  multiply:function(x,y){return x*y;},
+  divide:function(x,y){return x/y;},
+  pow:Math.pow //使用预定义函数
+};
+function operate2(operation,operand1,operand2){
+  if(typeof operators[operation]==="function")
+  return operators[operation](operand1,operand2);
+  else throw "unknown operator";
+}
+var j=operate2("add","hello",operate2("add","","world"));
+var k=operate2("pow",10,2)
+```
+
+#### 自定义函数属性
+
+JavaScript中的函数是一种特殊对象，可以拥有属性。如果一个信息仅仅是函数本身用到，最好将这个信息保存到函数对象的一个属性中。
+
+```
+uniqueInteger.counter=0;
+function uniqueInteger(){
+  return uniqueInteger.counter++; //先返回计数器的值，然后自增1
+}
+```
+
+### 6.5 作为命名空间的函数
+
+在JavaScript中无法声明只在一个代码块内可见的变量，所以我们可以定义一个函数用作临时的命名空间，在这个命名空间内定义的变量不会污染到全局命名空间。
+
+```
+function mumodule(){
+  //模块代码
+  //这个模块所使用的所有变量都是局部变量
+}
+mymodule(); //调用这个函数
+```
+
+还可以直接定义一个匿名函数，并在单个表达式中调用它
+
+```
+(function(){
+  //模块代码
+}()); //结束函数定义并立即调用它
+```
+
+function之前的圆括号是必须的，不写圆括号解释器会试图将关键字function解析为函数声明语句，使用圆括号才会正确地将其解析为函数定义表达式。
+
+特定场景下返回带补丁的extend()版本：
+
+```
+//定义一个扩展函数，用来将第二个以及后续参数复制至第一个参数
+//如果o的属性拥有一个不可枚举的同步属性，则for/in循环
+//不会枚举对象o的可枚举属性，也就是说不会正确处理诸如toString的属性
+//除非我们显式检测它
+var extend=(function(){
+  //在修复之前先检测是否存在bug
+  for(var p in {toString:null}){
+    //如果代码执行到这里，那么for/in循环会正确工作并返回
+    //一个简单版本的extend()函数
+    return function extend(o){
+      for(var i=1;i<arguments.length;i++){
+        var source=arguments[i];
+        for(var prop in source) o[prop]=source[prop];
+      }
+      return o;
+    };
+  }
+  //如果代码执行到这里，说明for/in循环不会枚举测试对象的toString属性
+  //因此返回另一个版本的extend()函数，这个函数显式测试
+  //Object.property中的不可枚举属性
+  return function patched_extend(o){
+    for(var i=1;i<arguments.length;i++){
+      var source=arguments[i];
+      //复制所有的可枚举属性
+      for(var prop in source) o[prop]=source[prop];
+      //现在检查特殊属性
+      for(var j=0;j<protoprops.length;j++){
+        prop=protoprops[j];
+        if(source.hasOwnProperty(prop)) o[prop]=source[prop];
+      }
+    }
+    return o;
+  };
+  //这个列表列出了需要检查的特殊属性
+  var protoprops=["toString","valueOf","constructor","hasOwnProperty","isPrototypeOf"]
+}());
+```
+
+### 6.6 闭包
+
+函数的执行依赖于变量作用域，这个作用域是在函数定义时决定的，而不是函数调用时决定的。为了实现这种词法作用域，JavaScript函数对象的内部状态不仅包含函数的代码逻辑，还必须引用当前的作用域链。
+
+```
+var scope="global scope"; //全局变量
+function checkscope(){
+  var scope="local scope"; //局部变量
+  function f(){return scope;} //在作用域中返回这个值
+  return f();
+}
+checkscope() //"local scope"
+```
+
+```
+var scope="global scope";
+function checkscope(){
+  var scope="local scope";
+  function f(){return scope;}
+  return f;
+}
+checkscope()()
+```
+
+这段代码将函数内的一对圆括号移动到了checkscope()之后。checkscope()现在仅仅返回函数内嵌套的一个函数对象，而不是直接返回结果。嵌套的函数f()定义在这个作用域链里，其中的变量scope一定是局部变量，不管在何时何地执行函数f()，这种绑定在执行f()时依然有效。
+
+```
+function counter(){
+  var n=0;
+  return{
+    count:function(){return n++;},
+    reset:function(){n=0}
+  };
+}
+var c=counter(),d=counter(); //创建两个计数器
+c.count(); //0
+d.count(); //0
+c.reset(); //reset()和count()方法共享状态
+c.count(); //0
+d.count(); //1
+```
+
+counter()函数返回了一个计数器对象，两个方法都可以访问私有变量n。每次调用counter()都会创建一个新的作用域链和一个新的私有变量。因此，如果调用counter()两次，则会得到两个计数器对象，而且彼此包含不同的私有变量，调用其中一个计数器对象的count()或reset()不会影响另外一个对象。
+
+用属性存取器方法getter和setter实现：
+
+```
+function counter(n){
+  return{
+    get count(){reutrn n++;},
+    set count(m){
+      if(m>=n) n=m;
+      else throw Error("...")
+    }
+  };
+}
+```
+
+
+
 
 
