@@ -1988,7 +1988,74 @@ function counter(n){
     }
   };
 }
+
 ```
+
+利用闭包实现私有属性存取器方法：
+
+```
+function addPrivateProperty(o,name,predicate){
+  var value; //这是一个属性值
+  //getter方法简单地将其返回
+  o["get"+name]=function(){return value;};
+  //setter方法首先检查值是否合法，合法就将其存储起来
+  o["set"+name]=function(v){
+    if(predicate&&!predicate(v))
+    throw Error("set"+name+":invalid value"+v);
+    else
+    value=v;
+  };
+}
+//展示addPrivateProperty()方法
+var o={}; //设置一个空对象
+//增加属性存取器方法getName()和setName()
+//确保只允许字符串值
+addPrivateProperty(o,"Name",function(x){return typeof x=="string";});
+o.setName("Frank"); //设置属性值
+console.log(o.getName()); //得到属性值
+o.setName(0); //试图设置一个错误类型值
+```
+
+**注意：**1.不要试图将循环代码移入定义这个闭包的函数内。
+
+```
+//返回一个函数组成的数组，他们的返回值是0~9
+function constfuncs(){
+  var funcs=[];
+  for(var i=0;i<10;i++)
+  funcs[i]=function(){return i;};
+  return funcs;
+}
+var funcs=constfuncs();
+funcs[5]() //
+```
+
+上面的代码创建了10个闭包，并将它们存储到一个数组中，这些闭包都是在一个函数调用中定义的，所以它们可以共享变量i。当constfuncs()返回时，变量i的值是10，所有的闭包都共享这个值。因此结果返回10.
+
+2。this是JavaScript的关键字，不是变量。如果闭包在外部函数里是无法访问this的，除非外部函数将this转存为一个变量。arguments同理。
+
+### 6.7 函数属性、方法和构造函数
+
+#### length属性
+
+函数的length属性是只读属性，它代表函数实参的数量，这里的参数指的是“形参”而非“实参”，也就是在函数定义时给出的实参个数，通常也是在函数调用时期望传入函数的实参个数。
+
+```
+function check(args){
+  var actual=args.length; //实参的真实个数
+  var expected=args.callee.length; //期望的实参个数
+  if(actual!==expected)
+  throw Error("Expected"+expected+"args;got"+actual);
+}
+function f(x,y,z){
+  check(arguments); //检查实参个数和期望的实参个数是否一致
+  return x+y+z; //再执行函数的后续逻辑
+}
+```
+
+#### prototype属性
+
+每一个函数都包含prototype属性，这个属性指向一个对象的引用，称做“原型对象”。
 
 
 
