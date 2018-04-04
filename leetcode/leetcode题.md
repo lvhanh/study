@@ -79,3 +79,116 @@ var twoSum = function(numbers, target) {
 ```
 
 因为是升序排列，所以取头尾两数，如果相同则输出，如果相加大于要求数则末尾数向左移一位，如果小于要求数则开头数向右移一位。
+
+## 从排序数组中删除重复项
+
+给定一个有序数组，你需要**原地**删除其中的重复内容，使每个元素只出现一次,并返回新的长度。
+
+不要另外定义一个数组，您必须通过用 O(1) 额外内存**原地修改**输入的数组来做到这一点。
+
+**示例：**
+
+```
+给定数组: nums = [1,1,2],
+
+你的函数应该返回新长度 2, 并且原数组nums的前两个元素必须是1和2
+不需要理会新的数组长度后面的元素
+```
+
+一.
+
+```
+var removeDuplicates = function(nums) {
+   for(var i=0;i<nums.length;){
+       if(nums[i]===nums[i+1])
+           nums.splice(i,1);
+       else
+           i++;
+   }
+    return i;
+};
+```
+
+因为是排序数组，所以只需两两比较，有相同的去掉前一个没相同的i+1
+
+二.
+
+```
+var removeDuplicates = function(nums) {
+    if (nums.length <= 1) return;
+    var i=1,j=1,m=nums[0];
+    while(i<nums.length){
+        if(nums[i]!==m){
+            nums[j]=nums[i];
+            j++;
+        }
+        m=nums[i];
+        i++;
+    }
+    return j;
+};
+```
+
+若有相同的数字，由后一位替换前一位数字。
+
+## 颠倒整数
+
+给定一个范围为 32 位 int 的整数，将其颠倒。
+
+**例 1:**
+
+```
+输入: 123
+输出:  321 
+```
+
+**例 2:**
+
+```
+输入: -123
+输出: -321
+```
+
+**例 3:**
+
+```
+输入: 120
+输出: 21
+```
+
+**注意:**
+
+假设我们的环境只能处理 32 位 int 范围内的整数。根据这个假设，如果颠倒后的结果超过这个范围，则返回 0。
+
+一.
+
+```
+var reverse = function(x) {
+    var i=0;
+    var sign=(x>0)?1:-1;
+    x=Math.abs(x);
+    while(x>0){
+        i=i*10+x%10;
+        x=Math.floor(x/10);
+    }
+    if(i>2147483647) return 0;
+    return i*sign;
+};
+```
+
+运用除法的整数余数，用到Math对象。
+
+二.
+
+```
+var reverse = function(x) {
+    var i;
+    var sign=(x>0)?1:-1;
+    x=Math.abs(x);
+    i=x.toString().split("").reverse().join("");
+    if(i>2147483647) return 0;
+    return i*sign;
+};
+```
+
+将数字转换为数组，用reverse()颠倒后再转换为数字
